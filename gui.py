@@ -11,32 +11,47 @@ def create_input(text, default=""):
 def make_gui(win, width, heigth):
     info_rows = "Number of rows: 4-50"
     info_cols = "Number columns: 4-90"
-    info_speed = "Speeds: 1 (slow) to 5 (fast), 0 for off"
-    tab = "               "
-    info = f"{info_cols}{tab}{info_rows}{tab}{info_speed}"
+    tab = "                   "
+    info = f"{info_cols}{tab}{info_rows}{tab*11}"
     tk.Label(text=info).pack(pady=10)
     cols_input = create_input("Number of columns", "9")
     rows_input = create_input("Number of rows", "5")
-    speed_input = create_input("Speed","0")
 
     label2 = tk.Label(text="WASD to move")
     second_player_active = tk.IntVar()
     def switch_second_player():
-        if second_player_active.get():
-            label2.config(text="Player 1: WASD, Player 2:Arrows")
-        else:
-            label2.config(text="WASD to move")
+        global maze
+        global solved
+        if maze != None:
+            if not solved:
+                maze.draw_players(True, second_player_active.get())
+            if second_player_active.get():
+                label2.config(text="Player 1: WASD, Player 2:Arrows")
+            else:
+                label2.config(text="WASD to move")
     check = tk.Checkbutton(
         text="Second player", 
         variable=second_player_active, 
         command=switch_second_player
     )
+    global maze
+    global solved
     global processing
+    maze = None
+    solved = False
     processing = False
     def generate():
         global maze
+        global solved
         global processing
         if not processing:
+            try:
+                cols = int(cols_input.get())
+                rows = int(rows_input.get())
+                if cols < 4 or cols > 90 or rows < 4 or rows > 50:
+                    raise Exception
+            except:
+                return None
             processing = True
             win.canvas.delete("all")
             maze = Maze(win,
@@ -46,20 +61,35 @@ def make_gui(win, width, heigth):
                 int(rows_input.get()),
                 pad = 20
             )
+            maze.draw_players(True, second_player_active.get())
+            win.redraw()
+            solved = False
             processing = False
     def solve():
-        try:
-            global maze
-            global processing
-            if not processing:
-                processing = True
-                maze.solve()
-                processing = False
-        except NameError:
-            raise NameError("No maze")
+        global maze
+        global solved
+        global processing
+        if not processing and maze != None and solved == False:
+            solved = True
+            processing = True
+            maze.solve("green")
+            processing = False
+    def on_key_press(key = "nope"):
+        global maze
+        global solved
+        global processing
+        if not processing and not solved and maze != None:
+            maze.draw_players(False, False)
+            solved = maze.move_first(key.keysym)
+            if not solved and second_player_active.get():
+                solved = maze.move_second(key.keysym)
+            if not solved:
+                maze.draw_players(True, second_player_active.get())
+            win.redraw()
+    win.root.bind('<KeyPress>', on_key_press)
     button1 = tk.Button(text="Generate", command=generate)
     button2 = tk.Button(text="Solve", command=solve)
     check.pack(side=tk.LEFT, padx=10, pady=10)
     button2.pack(side=tk.RIGHT, padx=10, pady=10)
     button1.pack(side=tk.RIGHT, padx=10, pady=10)
-    label2.pack(side=tk.TOP, padx=10, pady=15)
+    label2.pack(side=tk.TOP, padx=10, pady=15) 
