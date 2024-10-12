@@ -1,15 +1,12 @@
-import tkinter as tk
+from tkinter import Tk, Canvas
 
 class Window:
     def __init__(self, width, height):
-        self.root = tk.Tk()
+        self.root = Tk()
         self.root.title = "Maze"
-        self.canvas = tk.Canvas(width = width, height = height, bg="#d9d9d9")
+        self.canvas = Canvas(width = width, height = height, bg="#d9d9d9")
         self.canvas.pack()
 
     def redraw(self):
         self.root.update_idletasks()
         self.root.update()
-
-    def draw_line(self, line, fill_color):
-        line.draw(self.canvas, fill_color)
